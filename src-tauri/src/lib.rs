@@ -1,14 +1,35 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+mod bbs;
+mod menu_bar;
+mod popover;
+mod system_tray;
+
+use menu_bar::create_menu_bar;
+use objc2::{sel, MainThreadMarker};
+use objc2_app_kit::{NSApplication, NSApplicationActivationPolicy};
+use system_tray::SystemTray;
+
+use crate::popover::PopoverViewController;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    let subscriber = tracing_subscriber::FmtSubscriber::new();
+    tracing::subscriber::set_global_default(subscriber).unwrap();
+
+    let mtm = MainThreadMarker::new().unwrap();
+
+    // NSApplicationの初期化
+    let app = NSApplication::sharedApplication(mtm);
+    app.setActivationPolicy(NSApplicationActivationPolicy::Accessory);
+
+    let view_controller = PopoverViewController::new(mtm);
+
+    // ショートカットキーに必要なメニューバーを設定
+    let menu_bar = create_menu_bar(mtm, &view_controller, sel!(postButtonDidClick:));
+    app.setMainMenu(Some(&menu_bar));
+
+    // システムトレイを作成
+    let _system_tray = SystemTray::new(mtm, view_controller);
+
+    // イベントループを開始
+    app.run();
 }
