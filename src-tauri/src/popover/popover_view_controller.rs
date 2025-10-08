@@ -6,8 +6,8 @@ use super::popover_view::create_popover_view;
 use dispatch2::{run_on_main, MainThreadBound};
 use objc2::{define_class, msg_send, rc::Retained, DefinedClass, MainThreadMarker, MainThreadOnly};
 use objc2_app_kit::{
-    NSButton, NSControlTextEditingDelegate, NSTextField, NSTextFieldDelegate, NSTextView,
-    NSViewController,
+    NSApplication, NSButton, NSControlTextEditingDelegate, NSTextField, NSTextFieldDelegate,
+    NSTextView, NSViewController,
 };
 use objc2_foundation::{NSNotification, NSObject, NSObjectProtocol, NSString};
 
@@ -64,6 +64,12 @@ define_class!(
         #[unsafe(method(commentTextViewDidChange:))]
         fn comment_text_view_did_change(&self, notification: &NSNotification) {
             self.comment_text_view_did_change_impl(notification);
+        }
+
+        #[unsafe(method(closeButtonDidClick:))]
+        fn close_button_did_click(&self, _sender: &NSObject) {
+            let mtm = MainThreadMarker::new().unwrap();
+            self.close_button_did_click_impl(mtm);
         }
     }
 );
@@ -133,5 +139,10 @@ impl PopoverViewController {
         let text = text_view.string();
         let text_str = text.to_string();
         self.ivars().view_model.borrow_mut().set_comment(text_str);
+    }
+
+    fn close_button_did_click_impl(&self, mtm: MainThreadMarker) {
+        let app = NSApplication::sharedApplication(mtm);
+        app.terminate(None);
     }
 }

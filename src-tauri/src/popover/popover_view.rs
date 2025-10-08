@@ -83,12 +83,26 @@ fn create_submit_button(
     submit_button
 }
 
+fn create_close_button(
+    mtm: MainThreadMarker,
+    target: &PopoverViewController,
+) -> Retained<NSButton> {
+    let close_button = NSButton::new(mtm);
+    close_button.setTranslatesAutoresizingMaskIntoConstraints(false);
+    close_button.setTitle(&NSString::from_str("終了"));
+    close_button.setButtonType(objc2_app_kit::NSButtonType::MomentaryPushIn);
+    unsafe { close_button.setTarget(Some(target)) };
+    unsafe { close_button.setAction(Some(sel!(closeButtonDidClick:))) };
+    close_button
+}
+
 fn anchor(
-    view: &Retained<NSView>,
-    url_field: Retained<NSTextField>,
-    scroll_view: Retained<NSScrollView>,
-    sage_checkbox: &Retained<NSButton>,
-    submit_button: Retained<NSButton>,
+    view: &NSView,
+    url_field: &NSTextField,
+    scroll_view: &NSScrollView,
+    close_button: &NSButton,
+    sage_checkbox: &NSButton,
+    submit_button: &NSButton,
 ) {
     // URL text field constraints
     url_field
@@ -126,18 +140,36 @@ fn anchor(
         .constraintEqualToConstant(100.0)
         .setActive(true);
 
-    // Sage checkbox constraints
-    sage_checkbox
-        .topAnchor()
-        .constraintEqualToAnchor_constant(&scroll_view.bottomAnchor(), 10.0)
+    // Close button constraints
+    close_button
+        .bottomAnchor()
+        .constraintEqualToAnchor_constant(&view.bottomAnchor(), -10.0)
         .setActive(true);
-    sage_checkbox
+    close_button
         .leadingAnchor()
         .constraintEqualToAnchor_constant(&view.leadingAnchor(), 10.0)
         .setActive(true);
+    close_button
+        .widthAnchor()
+        .constraintEqualToConstant(40.0)
+        .setActive(true);
+    close_button
+        .heightAnchor()
+        .constraintEqualToConstant(25.0)
+        .setActive(true);
+
+    // Sage checkbox constraints
     sage_checkbox
         .bottomAnchor()
         .constraintEqualToAnchor_constant(&view.bottomAnchor(), -10.0)
+        .setActive(true);
+    sage_checkbox
+        .trailingAnchor()
+        .constraintEqualToAnchor_constant(&submit_button.leadingAnchor(), -10.0)
+        .setActive(true);
+    sage_checkbox
+        .heightAnchor()
+        .constraintEqualToConstant(25.0)
         .setActive(true);
 
     // Submit button constraints
@@ -171,13 +203,22 @@ pub fn create_popover_view(
     let (scroll_view, comment_text_view) = create_comment_text_view(mtm, target);
     let sage_checkbox = create_sage_checkbox(mtm, target);
     let submit_button = create_submit_button(mtm, target);
+    let close_button = create_close_button(mtm, target);
 
     view.addSubview(&url_field);
     view.addSubview(&scroll_view);
+    view.addSubview(&close_button);
     view.addSubview(&sage_checkbox);
     view.addSubview(&submit_button);
 
-    anchor(&view, url_field, scroll_view, &sage_checkbox, submit_button);
+    anchor(
+        &view,
+        &url_field,
+        &scroll_view,
+        &close_button,
+        &sage_checkbox,
+        &submit_button,
+    );
 
     (view, comment_text_view, sage_checkbox)
 }
