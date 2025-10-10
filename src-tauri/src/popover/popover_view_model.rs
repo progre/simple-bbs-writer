@@ -1,5 +1,5 @@
 use anyhow::Ok;
-use tokio::spawn;
+use tauri::async_runtime::spawn;
 use url::Url;
 
 use crate::bbs::{self, fetch_thread_url_encoding_name, parse_bbs_url};
